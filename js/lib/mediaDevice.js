@@ -28,13 +28,13 @@
      */
     MediaDevice.prototype.getQuickScanList = function(){
         return [
-            // {
-            //     "label": "4K(UHD)",
-            //     "width": 3840,
-            //     "height": 2160,
-            //     "ratio": "16:9",
-            //     "frameRate": 30
-            // },
+            {
+                "label": "4K(UHD)",
+                "width": 3840,
+                "height": 2160,
+                "ratio": "16:9",
+                "frameRate": 30
+            },
             {
                 "label": "4K(UHD)",
                 "width": 3840,
@@ -49,27 +49,27 @@
                 "ratio": "16:9",
                 "frameRate": 30
             },
-            // {
-            //     "label": "1080p(FHD)",
-            //     "width": 1920,
-            //     "height": 1080,
-            //     "ratio": "16:9",
-            //     "frameRate": 15
-            // },
-            // {
-            //     "label": "UXGA",
-            //     "width": 1600,
-            //     "height": 1200,
-            //     "ratio": "4:3",
-            //     "frameRate": 30
-            // },
-            // {
-            //     "label": "UXGA",
-            //     "width": 1600,
-            //     "height": 1200,
-            //     "ratio": "4:3",
-            //     "frameRate": 15
-            // },
+            {
+                "label": "1080p(FHD)",
+                "width": 1920,
+                "height": 1080,
+                "ratio": "16:9",
+                "frameRate": 15
+            },
+            {
+                "label": "UXGA",
+                "width": 1600,
+                "height": 1200,
+                "ratio": "4:3",
+                "frameRate": 30
+            },
+            {
+                "label": "UXGA",
+                "width": 1600,
+                "height": 1200,
+                "ratio": "4:3",
+                "frameRate": 15
+            },
             {
                 "label": "720p(HD)",
                 "width": 1280,
@@ -77,41 +77,41 @@
                 "ratio": "16:9",
                 "frameRate": 30
             },
-            // {
-            //     "label": "720p(HD)",
-            //     "width": 1280,
-            //     "height": 720,
-            //     "ratio": "16:9",
-            //     "frameRate": 15
-            // },
-            // {
-            //     "label": "SVGA",
-            //     "width": 800,
-            //     "height": 600,
-            //     "ratio": "4:3",
-            //     "frameRate": 30
-            // },
-            // {
-            //     "label": "SVGA",
-            //     "width": 800,
-            //     "height": 600,
-            //     "ratio": "4:3",
-            //     "frameRate": 15
-            // },
-            // {
-            //     "label": "VGA",
-            //     "width": 640,
-            //     "height": 480,
-            //     "ratio": "4:3",
-            //     "frameRate": 30
-            // },
-            // {
-            //     "label": "VGA",
-            //     "width": 640,
-            //     "height": 480,
-            //     "ratio": "4:3",
-            //     "frameRate": 15
-            // },
+            {
+                "label": "720p(HD)",
+                "width": 1280,
+                "height": 720,
+                "ratio": "16:9",
+                "frameRate": 15
+            },
+            {
+                "label": "SVGA",
+                "width": 800,
+                "height": 600,
+                "ratio": "4:3",
+                "frameRate": 30
+            },
+            {
+                "label": "SVGA",
+                "width": 800,
+                "height": 600,
+                "ratio": "4:3",
+                "frameRate": 15
+            },
+            {
+                "label": "VGA",
+                "width": 640,
+                "height": 480,
+                "ratio": "4:3",
+                "frameRate": 30
+            },
+            {
+                "label": "VGA",
+                "width": 640,
+                "height": 480,
+                "ratio": "4:3",
+                "frameRate": 15
+            },
             // {
             //     "label": "360p(nHD)",
             //     "width": 640,
@@ -256,7 +256,8 @@
                     microphones: microphone,
                     speakers: speaker,
                     cameras: camera,
-                    screenResolution: screenResolution
+                    screenResolution: screenResolution,
+                    isConstraintsKeywordSupport: isConstraintsKeywordSupport
                 })
             }else {
                 return {
@@ -376,11 +377,15 @@
      * @param stream
      */
     MediaDevice.prototype.closeStream = function(stream){
-        var tracks = stream.getTracks();
-        for (var track in tracks) {
-            tracks[track].onended = null;
-            log.info("close stream");
-            tracks[track].stop();
+        try{
+            var tracks = stream.getTracks();
+            for (var track in tracks) {
+                tracks[track].onended = null;
+                log.log("close stream");
+                tracks[track].stop();
+            }
+        }catch (e) {
+            log.error(e)
         }
     }
 
@@ -392,25 +397,29 @@
     MediaDevice.prototype.isConstraintsKeywordSupport = async function(){
         var This = this
         var result = true
+        var mediaDevice =  JSON.parse(localStorage.getItem('mediaDevice'))
+        var isKeywordSupport = mediaDevice ? mediaDevice.isConstraintsKeywordSupport : null
 
-        try {
+        if(isKeywordSupport !== null){
+            result = isKeywordSupport
+        }else {
             var constraints = {
                 audio: false,
                 video: {
-                    width: { ideal: 640, },
-                    height: { ideal: 360, }
+                    width: { ideal: 640 },
+                    height: { ideal: 360 }
                 }
             }
+
+            log.log("isConstraintsKeywordSupport test constraints: \n" + JSON.stringify(constraints, null, '    ') );
             await navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
-                log.info('ideal support')
+                log.log('constraints keyWords support')
                 result = true
                 This.closeStream(stream)
             }).catch(function () {
-                log.info('ideal is not support')
+                log.log('ideal is not support')
                 result = false
             })
-        }catch (error) {
-            result = false
         }
 
         log.info('is constraints Keyword support: ', result)
@@ -421,7 +430,7 @@
      * 使用exact关键字取流
      * @returns {Promise<void>}
      */
-    MediaDevice.prototype.getStreamUseExactConstraints = async function(){
+    MediaDevice.prototype.getStreamWithExactConstraints = async function(){
         var This = this
         var mediaDevice =  JSON.parse(localStorage.getItem('mediaDevice'))
         var quickScanList = This.getQuickScanList()
@@ -435,7 +444,7 @@
             }
             // 当前循环设备之前已经有分辨率扫描的记录，不重新扫描
             if (mediaDevice.cameras[j].capability && mediaDevice.cameras[j].capability.length > 0) {
-                log.log("this device has already get resolution before!")
+                log.warn("this device has already get resolution before: " + mediaDevice.cameras[j].label)
                 continue
             }
 
@@ -444,6 +453,7 @@
             var capability = mediaDevice.cameras[j].capability
 
             function getNewStreamSuccess() {
+                log.info("get Stream Success : " + quickScanList[i].width  + " x " + quickScanList[i].height + 'px, ' + 'frameRate: ' + quickScanList[i].frameRate);
                 capability.push({
                     width: quickScanList[i].width,
                     height: quickScanList[i].height,
@@ -458,14 +468,7 @@
             }
 
             function getNewStreamFailed() {
-                log.warn('device has not support this resolution: ',
-                    JSON.stringify({
-                        width: quickScanList[i].width,
-                        height: quickScanList[i].height,
-                        frameRate: quickScanList[i].frameRate,
-                        aspectRatio: quickScanList[i].width / quickScanList[i].height
-                    }, null, '    ')
-                )
+                log.warn("fail: mismatch : " + quickScanList[i].width  + " x " + quickScanList[i].height + 'px, ' + 'frameRate: ' + quickScanList[i].frameRate);
             }
 
             // 存在问题：不使用关键字时，applyConstraints和getUserMedia取流都存在不准确问题，比如1920*1080，摄像头不支持该分辨率也能取流成功，因为取的是别的分辨率
@@ -480,10 +483,10 @@
                     }
 
                     await videoTrack.applyConstraints(constraints).then(function () {
-                        log.info('applyConstraints success' + JSON.stringify(constraints, null, '    '))
+                        log.log('applyConstraints success' + JSON.stringify(constraints, null, '    '))
                         getNewStreamSuccess(null)
                     }).catch(function (error) {
-                        log.warn('applyConstraints error: ', error.name)
+                        log.warn(error.name)
                         getNewStreamFailed()
                     })
                 } else {
@@ -499,7 +502,7 @@
                     }
 
                     await navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
-                        log.info("getUserMedia success!" + JSON.stringify(constraints, null, '    '))
+                        log.log("getUserMedia success!" + JSON.stringify(constraints, null, '    '))
                         localStream = stream
                         getNewStreamSuccess()
                     }).catch(function (error) {
@@ -512,15 +515,14 @@
         localStorage.setItem('mediaDevice', JSON.stringify(mediaDevice, null, '    '))
     }
 
+    // 创建video标签
+    var cameraPrevVideo = document.createElement('video')
+    cameraPrevVideo.onloadedmetadata =  MediaDevice.prototype.displayVideoDimensions;
     /***
-     * 兼容不支持min/max/ideal/exact的情况，使用{audio:false, video: { width: 1280, height: 720}} 格式取流
-     * 通过取流后的video实际尺寸判断取流是否成功
+     * video 元数据加载完成后触发，用于判断取流后的分辨率与实际要求是否一致
+     * @param scanListIndex 当前扫描的分辨率列表的索引值
+     * @param cameraIndex 当前扫描的摄像头列表值
      */
-    window.onloadeddata = function(){
-        window.cameraPrev = document.getElementById('cameraPrev')
-        cameraPrev.onloadedmetadata =  MediaDevice.prototype.displayVideoDimensions;
-    }
-
     MediaDevice.prototype.displayVideoDimensions = function(scanListIndex, cameraIndex) {
         var This = this
         var i = scanListIndex
@@ -546,42 +548,52 @@
 
             i++
             if( i< quickScanList.length){
-                window.isCameraScan = false
-                This.getSteamUseNormalConstraints(i, j)
+                log.log('Scan the next resolution')
+                window.isScanCameraChange = false
+                This.getStreamWithoutConstraintsKeyWords(i, j)
             }else  if(j < mediaDevice.cameras.length - 1){
-                window.isCameraScan = true
+                log.log('Scan the next camera')
+                window.isScanCameraChange = true
                 This.closeStream(stream)
                 j++;
                 i=0;
-                This.getSteamUseNormalConstraints(i, j)
+                This.getStreamWithoutConstraintsKeyWords(i, j)
             }else {
                 This.closeStream(stream)
-                log.log("End of scan ~~")
+                log.log("All camera capabilities are End of scan ~~")
+                cameraPrevVideo = null
             }
         }
 
-        if (!cameraPrev.videoWidth) {
+        if (!cameraPrevVideo.videoWidth) {
             setTimeout(function () {
                 This.displayVideoDimensions(scanListIndex, cameraIndex)
             }, 500);  //was 500
         }
 
-        if (cameraPrev.videoWidth * cameraPrev.videoHeight > 0) {
-            log.log("Display size for : " + quickScanList[scanListIndex].width  + "x" + quickScanList[scanListIndex].height);
-            log.log("Stream dimensions for :" + cameraPrev.videoWidth + "x" + cameraPrev.videoHeight);
-            if(quickScanList[scanListIndex].width + "x" + quickScanList[scanListIndex].height !== cameraPrev.videoWidth + "x" + cameraPrev.videoHeight){
-                log.warn("pass: " + quickScanList[scanListIndex].width  + "x" + quickScanList[scanListIndex].height)
+        if (cameraPrevVideo.videoWidth * cameraPrevVideo.videoHeight > 0) {
+            log.info("Display size for : " + quickScanList[scanListIndex].width  + "x" + quickScanList[scanListIndex].height);
+            log.info("Stream dimensions for :" + cameraPrevVideo.videoWidth + "x" + cameraPrevVideo.videoHeight);
+            if(quickScanList[scanListIndex].width + "x" + quickScanList[scanListIndex].height !== cameraPrevVideo.videoWidth + "x" + cameraPrevVideo.videoHeight){
+                log.info("fail: mismatch")
                 captureResults({result: false})
             }
             else{
-                log.warn("fail: mismatch :" + quickScanList[scanListIndex].width  + "x" + quickScanList[scanListIndex].height)
+                log.info("pass :" + quickScanList[scanListIndex].width  + "x" + quickScanList[scanListIndex].height)
                 captureResults({result: true})
             }
         }
 
     }
 
-    MediaDevice.prototype.getSteamUseNormalConstraints = async function(scanListIndex, cameraIndex){
+    /***
+     * 兼容不支持min/max/ideal/exact的情况，使用{audio:false, video: { width: 1280, height: 720}} 格式取流
+     * 通过取流后的video实际尺寸判断取流是否成功
+     * @param scanListIndex 当前扫描的分辨率列表的索引值
+     * @param cameraIndex 当前扫描的摄像头列表值
+     * @returns {Promise<void>}
+     */
+    MediaDevice.prototype.getStreamWithoutConstraintsKeyWords = async function(scanListIndex, cameraIndex){
         var This = this
         var quickScanList = This.getQuickScanList()
         var mediaDevice =  JSON.parse(localStorage.getItem('mediaDevice'))
@@ -593,16 +605,16 @@
         var constraints;
 
         // 当前循环设备之前已经有分辨率扫描的记录，不重新扫描
-        if (window.isCameraScan === true && capability && capability.length > 0) {
+        if (window.isScanCameraChange === true && capability && capability.length > 0) {
             log.warn("this device has already get resolution before: " + mediaDevice.cameras[j].label)
             cameraIndex ++
             if(cameraIndex < mediaDevice.cameras.length){
                 log.warn('Scan the next device')
-                This.getSteamUseNormalConstraints(scanListIndex, cameraIndex)
+                This.getStreamWithoutConstraintsKeyWords(scanListIndex, cameraIndex)
             }
             return
         }
-        window.isCameraScan = false
+        window.isScanCameraChange = false
 
         function getNewStreamSuccess() {
             log.log("Display size for " + quickScanList[i].label + ": " + quickScanList[i].width + "x" + quickScanList[i].height);
@@ -622,7 +634,7 @@
             }
 
             await videoTrack.applyConstraints(constraints).then(function () {
-                log.info('applyConstraints success' + JSON.stringify(constraints, null, '    '))
+                log.log('applyConstraints success' + JSON.stringify(constraints, null, '    '))
                 getNewStreamSuccess()
             }).catch(function (error) {
                 log.warn('applyConstraints error: ', error.name)
@@ -640,9 +652,9 @@
             }
 
             await navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
-                log.info("getUserMedia success!" + JSON.stringify(constraints, null, '    '))
+                log.log("getUserMedia success!" + JSON.stringify(constraints, null, '    '))
                 window.stream = stream
-                cameraPrev.srcObject = stream
+                cameraPrevVideo.srcObject = stream
                 getNewStreamSuccess()
             }).catch(function (error) {
                 log.error(error)
@@ -654,6 +666,7 @@
      * 设置设备所支持的取流能力：frameRate, width, height
      */
     MediaDevice.prototype.setDeviceCapability = async function () {
+        log.warn('device capability scanning')
         var This = this
         var mediaDevice =  JSON.parse(localStorage.getItem('mediaDevice'))
         // 判断取流是否支持关键字设置
@@ -661,15 +674,15 @@
         mediaDevice.isConstraintsKeywordSupport = isKeywordSupport
 
         if(mediaDevice && mediaDevice.cameras.length > 0){
-            // if(isKeywordSupport === true) {
-            //     log.warn("min/max/ideal/exact keyWord is support")
-            //     This.getStreamUseExactConstraints()
-            // }else {
-                log.warn("min/max/ideal/exact keyWord is  NOT support")
-                window.isCameraScan = true
-                This.getSteamUseNormalConstraints(0, 0)
+            if(isKeywordSupport === true) {
+                log.log("min/max/ideal/exact keyWord is support")
+                This.getStreamWithExactConstraints()
+            }else {
+                log.log("min/max/ideal/exact keyWord is  NOT support")
+                window.isScanCameraChange = true
+                This.getStreamWithoutConstraintsKeyWords(0, 0)
 
-            // }
+            }
         }else {
             log.warn('no cameras need to resolution scan!')
         }
