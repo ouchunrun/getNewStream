@@ -283,3 +283,132 @@ function dumpStats(results) {
     return statsString;
 }
 
+
+var clone = function (obj) {
+    if (obj === null || typeof obj !== 'object') {
+        return obj;
+    }
+
+    var copy = function (data) {
+        var copy = data.constructor();
+        for (var attr in data) {
+            if (data.hasOwnProperty(attr)) {
+                copy[attr] = data[attr];
+            }
+        }
+        return copy;
+    };
+
+    if (typeof obj === 'object' && !Array.isArray(obj)) {
+        try {
+            return JSON.parse( JSON.stringify(obj) );
+        } catch (err) {
+            return copy(obj);
+        }
+    }
+
+    return copy(obj);
+};
+
+
+
+function getUsingDeviceId () {
+    var selectedIndex = document.getElementById('videoList').options.selectedIndex
+    var selectedOption = document.getElementById('videoList').options[selectedIndex]
+    return selectedOption.value
+}
+
+function closeStream() {
+    // clear first
+    var stream = cameraPrev.srcObject
+    if (stream){
+        try {
+            stream.oninactive = null;
+            var tracks = stream.getTracks();
+            for (var track in tracks) {
+                tracks[track].onended = null;
+                log.info("close stream");
+                tracks[track].stop();
+            }
+        }
+        catch (error) {
+            log.info('closeStream: Failed to close stream');
+            log.error(error);
+        }
+        stream = null;
+        cameraPrev.srcObject = null
+    }
+
+    if (localStream) {
+        localStream.getTracks().forEach(function(track) {
+            track.stop();
+        });
+        var videoTracks = localStream.getVideoTracks();
+        for (var i = 0; i !== videoTracks.length; ++i) {
+            videoTracks[i].stop();
+        }
+    }
+}
+
+document.onreadystatechange = function () {
+    if (document.readyState === "complete") {
+        mediaDevice = new MediaDevice()
+        var videoInputList = []
+        videoInputList.push('<option class="cameraOption" value="">' + "请选择" + '</option>')
+        mediaDevice.enumDevices(deviceInfo => {
+            console.log('enumDevices' + JSON.stringify(deviceInfo.cameras))
+            if (deviceInfo.cameras) {
+                for (var j = 0; j < deviceInfo.cameras.length; j++) {
+                    if (!deviceInfo.cameras[j].label) {
+                        deviceInfo.cameras[j].label = 'camera' + j
+                    }
+                    videoInputList.push('<option class="cameraOption" value="' + deviceInfo.cameras[j].deviceId + '">' + deviceInfo.cameras[j].label + '</option>')
+                    console.log('camera: ' + deviceInfo.cameras[j].label)
+                }
+            }
+            videoInputList.push('<option class="cameraOption" value="presentShare">' + "presentShare" + '</option>')
+            document.getElementById('videoList').innerHTML = videoInputList.join('')
+
+            mediaDevice.checkAvailableDev()
+            setTimeout(function () {
+                mediaDevice.setDeviceCapability()
+                mediaDevice.setDeviceCheckInterval(true)
+            }, 1000)
+        }, function (error) {
+            console.error('enum device error: ' + error)
+        })
+    }
+}
+
+
+async function selectDeviceAndGum(){
+    var deviceId = getUsingDeviceId()
+    console.warn("deviceId: ", deviceId)
+    if(deviceId === ""){
+        return
+    }
+
+    console.log("clear stream first")
+    closeStream()
+
+    var getStreamCallback = function (data) {
+        if(data.stream){
+            console.warn('get stream success');
+            localStream = data.stream
+            cameraPrev.srcObject = data.stream
+            localVideo.srcObject = data.stream;
+            connectButton.disabled = false;
+        }else if(data.error){
+            console.error('get stream failed: ', data.error)
+        }else {
+            console.warn(data)
+        }
+    }
+
+    var data = JSON.parse(getUserMediaConstraintsDiv.value);
+    data.deviceId = deviceId
+    data.callback = getStreamCallback
+
+    console.log("设置的分辨率:: \n" + JSON.stringify(data, null, '    ') );
+    getMedia(data)
+}

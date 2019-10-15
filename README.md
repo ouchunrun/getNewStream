@@ -1,56 +1,76 @@
+
 ## 说明
 
-关于流的操作，三个要点：
-
-- 取流（getUserMedia）
-- 限制分辨率（getUserMedia 获取新的流 或 applyConstraints改变流的分辨率）
-- 加流（addStream 或 replaceTrack）
-
-FAQ:
-
-1、constraints 常用列表
-
-2、如何进行 constraints min/max/ideal 参数支持测试？
-
-3、取流失败后 constraints 如何设置？
-    - 根据设备能力，在不超过服务器能力的情况下获取设备支持的最合适的分辨率
+- 取流接口：getUserMedia、applyConstraints、getDisplayMedia
+- 类型：音频audio、视频video、桌面共享 screenShare
+- 关键点：当前分辨率、服务器要求的分辨率、实际取到的分辨率。实际取到的分辨率不超过服务器限制的话就可以
+- 策略：取流使用exact取流，exact取分辨率支持列表都失败后使用ideal，ideal都失败后不使用关键字
+- 使用Promises方法
 
 
-## 一、限制分辨率
-1、MediaStreamTrack.applyConstraints() 接口使用条件
+### constraints 设置
 
-- 浏览器支持applyConstraints接口
-- stream && stream.active == true
+#### audio constraints
 
-FAQ:
-
-1、怎么确定 applyConstraints 生效？？因为存在applyConstraints成功但是实际并没有生效的场景
-   
-- videoTrack.getConstraints() 设置的分辨率
-- videoTrack.getSettings() 当前流示例的分辨率、帧率【低版本不支持这个接口】
-
-## 二、取流
-
-1、预览 constraints  360*640
 ```
-var constraint = {
+ var constraints = {}
+  if(options.deviceId){
+     constraints = {
+         audio: { deviceId: options.deviceId },
+         video: false
+     }
+ }else {
+    constraints = { audio: true, video: false }
+ }
+```
+
+#### video constraints
+
+
+- 根据服务器要求的分辨率和设备支持的能力获取最佳的分辨率。
+- 这里要判断是否使用关键字限制
+- 使用exact取流 ==> 失败后使用ideal ==> 失败后不使用关键字（`不使用关键字取流很可能超服务器能力限制，例如超高清会议系统`）
+
+
+
+#### screenShare constraints
+
+- 低版本考虑插件
+- 高版本需要设置分辨率，例如：
+
+```javascript
+var screen_constraints = {
     audio: false,
-    video{
-        frameRate: 30,
-        aspectRatio: { min: 1.777, max: 1.778 },
-        width: 360,
-        height: 640
+    video: {
+        width: {max: '1920'},
+        height: {max: '1080'},
+        frameRate: {max: '5'}
     }
-}
+};
 ```
-
-预览取流不适用min/max/ideal/exact等参数所以不存在取流失败的情况
-预览的必要性在于，避免开摄像头后在不知情的情况下出现尴尬的画面！
+注：是否需要考虑关键字是否支持？？
 
 
-2、getUserMedia取流 constraints：根据服务器要求的分辨率取流
 
-3、navigator.mediaDevices.getUserMedia  Promises方法
+### getMedia 接口
 
-- 屏幕共享和摄像头共享设计为一个接口：getMedia()
-- 服务器要求的分辨率及分辨率比例限制等，都可以通过传参设置，以及deviceId等
+1、参数
+
+- streamType：audio/video/screenShare 取流类型
+- deviceId: 设备ID
+- frameRate： 服务器要求的帧率，默认最大30帧
+- aspectRatio： 服务器要求的比例，默认16：9
+- width：服务器要求的分辨率宽度，默认640
+- height: 服务器要求的分辨率高度，默认360
+- useKeyWordConstraints: 是否使用exact 等关键字
+
+2、返回值： stream，通过回调的方式调用
+
+
+3、取流失败类型
+
+
+
+
+
+
