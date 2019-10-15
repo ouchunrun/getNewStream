@@ -350,12 +350,13 @@ function closeStream() {
     }
 }
 
+var mediaDeviceInstance
 document.onreadystatechange = function () {
     if (document.readyState === "complete") {
-        mediaDevice = new MediaDevice()
+        mediaDeviceInstance = new MediaDevice()
         var videoInputList = []
         videoInputList.push('<option class="cameraOption" value="">' + "请选择" + '</option>')
-        mediaDevice.enumDevices(deviceInfo => {
+        mediaDeviceInstance.enumDevices(deviceInfo => {
             console.log('enumDevices' + JSON.stringify(deviceInfo.cameras))
             if (deviceInfo.cameras) {
                 for (var j = 0; j < deviceInfo.cameras.length; j++) {
@@ -369,10 +370,10 @@ document.onreadystatechange = function () {
             videoInputList.push('<option class="cameraOption" value="presentShare">' + "presentShare" + '</option>')
             document.getElementById('videoList').innerHTML = videoInputList.join('')
 
-            mediaDevice.checkAvailableDev()
+            mediaDeviceInstance.checkAvailableDev()
             setTimeout(function () {
-                mediaDevice.setDeviceCapability()
-                mediaDevice.setDeviceCheckInterval(true)
+                mediaDeviceInstance.setDeviceCapability()
+                mediaDeviceInstance.setDeviceCheckInterval(true)
             }, 1000)
         }, function (error) {
             console.error('enum device error: ' + error)
@@ -381,34 +382,3 @@ document.onreadystatechange = function () {
 }
 
 
-async function selectDeviceAndGum(){
-    var deviceId = getUsingDeviceId()
-    console.warn("deviceId: ", deviceId)
-    if(deviceId === ""){
-        return
-    }
-
-    console.log("clear stream first")
-    closeStream()
-
-    var getStreamCallback = function (data) {
-        if(data.stream){
-            console.warn('get stream success');
-            localStream = data.stream
-            cameraPrev.srcObject = data.stream
-            localVideo.srcObject = data.stream;
-            connectButton.disabled = false;
-        }else if(data.error){
-            console.error('get stream failed: ', data.error)
-        }else {
-            console.warn(data)
-        }
-    }
-
-    var data = JSON.parse(getUserMediaConstraintsDiv.value);
-    data.deviceId = deviceId
-    data.callback = getStreamCallback
-
-    console.log("设置的分辨率:: \n" + JSON.stringify(data, null, '    ') );
-    getMedia(data)
-}
