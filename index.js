@@ -373,7 +373,7 @@ document.onreadystatechange = function () {
             mediaDeviceInstance.checkAvailableDev()
             setTimeout(function () {
                 mediaDeviceInstance.setDeviceCapability()
-                mediaDeviceInstance.setDeviceCheckInterval(true)
+                // mediaDeviceInstance.setDeviceCheckInterval(true)
             }, 1000)
         }, function (error) {
             console.error('enum device error: ' + error)
