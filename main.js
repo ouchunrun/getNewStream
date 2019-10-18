@@ -5,66 +5,7 @@ var cameraPrevRes = document.getElementById('cameraPrevRes')
 var mediaDevice = null
 
 connectButton.disabled = true;
-hangupButton.disabled = true;
-
-function getConstraints(data) {
-    var constraints = {}
-
-    switch (data.streamType) {
-        case 'audio':
-            console.warn('get audio stream')
-            if(data.deviceId){
-                constraints = {
-                    audio: { deviceId: data.deviceId },
-                    video: false
-                }
-            }else {
-                constraints = { audio: true, video: false }
-            }
-            break
-        case 'video':
-            console.warn('get video stream')
-            /***
-             * 1、根据设备扫描结果获取最接近的分辨率
-             * @type {null}
-             */
-            var matchResolution = null
-            if(data.deviceId){
-                // matchResolution 针对支持关键字的环境是一定支持的保存的分辨率，对于不支持的环境，不一定支持能取到保存的分辨率
-                matchResolution = mediaDeviceInstance.getSuitableResolution({
-                    frameRate: data.frameRate ? data.frameRate : 30,
-                    width: data.width ? data.width : 640,
-                    height: data.height ? data.height : 360,
-                    deviceId: data.deviceId
-                })
-                constraints = {
-                    audio: false,
-                    video: {
-                        deviceId: {
-                            exact: data.deviceId
-                        }
-                    }
-                }
-            }else {
-                constraints = {
-                    audio: false,
-                    video: true
-                }
-            }
-            constraints.video.frameRate = { exact: matchResolution.frameRate ? matchResolution.frameRate : data.frameRate ? data.frameRate : 30 }
-            constraints.video.aspectRatio =  matchResolution.width ? { exact: matchResolution.width / matchResolution.height } : {exact: data.width / data.height}
-            constraints.video.width = { exact: matchResolution.width ? matchResolution.width : data.width ? data.width: 640 }
-            constraints.video.height = { exact: matchResolution.height ? matchResolution.height : data.height ? data.height : 360 }
-            break
-        case 'screenShare':
-            console.warn('get present stream')
-            break;
-        default:
-            console.warn("data.streamType: ", data.streamType)
-            break
-    }
-    return constraints
-}
+hangupButton.disabled = true
 
 function getUserMediaRepeatedly(data){
     var videoTrack = localStream ? localStream.getVideoTracks()[0] : null
@@ -299,7 +240,7 @@ function getUserMediaRepeatedly(data){
                 console.warn("localStream: ", localStream)
                 if(localStream && localStream.getVideoTracks().length && localStream.active === true) {
                     applyconstraints = constraints.video
-                    delete applyconstraints.video.deviceId
+                    delete applyconstraints.deviceId
 
                     if(videoTrack && videoTrack.applyConstraints){
                         console.warn("use applyConstraints", JSON.stringify(applyconstraints, null, ' '))
@@ -470,7 +411,7 @@ async function selectDeviceAndGum(){
     console.log("clear stream first")
     closeStream()
 
-    var getStreamCallback = function (data) {
+    var gumCallback = function (data) {
         if(data.stream){
             console.warn('get stream success');
             localStream = data.stream
@@ -484,10 +425,17 @@ async function selectDeviceAndGum(){
         }
     }
 
+    /*** 参数说明
+     * streamType
+     * frameRate
+     * aspectRatio
+     * width
+     * height
+     */
     var data = JSON.parse(getUserMediaConstraintsDiv.value);
     data.deviceId = deviceId
-    data.callback = getStreamCallback
-
+    data.callback = gumCallback
     console.log("设置的分辨率:: \n" + JSON.stringify(data, null, '    ') );
+
     getMedia(data)
 }
