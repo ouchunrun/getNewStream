@@ -9,14 +9,7 @@ hangupButton.disabled = true
 
 /***
  * 取流：包括 桌面共享present(window/screen/tab/all)、摄像头共享（audio/video）
- * FAQ： 如何区分预览取流和正常取流（不用区分，都是取流，预览是不存在服务器要求的分辨率的）
- * 参数说明：
- * streamType
- * frameRate
- * aspectRatio
- * width
- * height
- *
+ * FAQ： 如何区分预览取流和正常取流（不用区分，都是取流，预览是不存在服务器要求的分辨率的
  */
 async function selectDeviceAndGum(){
     var deviceId = getUsingDeviceId()
@@ -30,7 +23,7 @@ async function selectDeviceAndGum(){
 
     var gumCallback = function (message) {
         if(message.stream){
-            console.warn('get stream success');
+            console.warn('selectDeviceAndGum: get stream success');
             localStream = message.stream
             cameraPrev.srcObject = message.stream
             localVideo.srcObject = message.stream;
@@ -54,6 +47,5 @@ async function selectDeviceAndGum(){
             deviceId: deviceId,
         }
     }
-
     getNewStream(gumData)
 }
