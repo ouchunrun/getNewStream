@@ -1,3 +1,7 @@
+/***
+ * 取流
+ * @param data
+ */
 function getNewStream(data) {
     console.warn("getNewStream data: ", JSON.stringify(data, null, '  '))
     let param = {
@@ -15,7 +19,18 @@ function getNewStream(data) {
 
 /***
  * 取流： audio/video/screenShare
- * @param data
+ * @param data {
+ *      callback: callback,
+        streamType: "video",
+        constraintsKeyWord: "exact",
+        constraints: {
+            aspectRatio: {min: 1.777, max: 1.778},
+            frameRate: 30,
+            width: 1280,
+            height: 720,
+            deviceId: deviceId,
+        }
+ * }
  * @param constraints
  */
 function getMedia(data, constraints) {
@@ -33,10 +48,28 @@ function getMedia(data, constraints) {
     }
 
     function onGetStreamFailed(error) {
-        console.warn("applyConstraints error: ", error.name)
+        console.error("get stream error: ", error.name)
         data.settings = constraints
         data.error = error
-        getMedia(data)
+        if(data.streamType === 'video'){
+            switch (error.name) {
+                case 'InternalError':
+                case 'OverconstrainedError':
+                    getMedia(data)
+                    break
+                case 'NotFoundError':
+                case 'NotReadableError':
+                case 'NotAllowedError':
+                case 'PermissionDeniedError':
+                case 'PermissionDismissedError':
+                    data.callback({error: error})
+                    break
+                default:
+                    break
+            }
+        }else {
+            data.callback({error: error})
+        }
     }
 
     if (data.streamType === 'audio' || data.streamType === 'video') {
@@ -66,16 +99,24 @@ function getMedia(data, constraints) {
 
 /***
  * 获取分辨率
- * @param data
+ * @param data, eg.{
+    constraintsKeyWord: "exact"
+    deviceId: "8cd24e4d2ff8de04d9170e94899fdb24a10ac7c9d09cb90bbe796e754f768d03"
+    frameRate: 30
+    height: 720
+    streamType: "video"
+    width: 1280
+ * }
  * @param reTry
  */
 function getConstraints(data, reTry) {
+    console.warn(data)
     let constraints = {}
     console.warn("data.streamType: ", data.streamType)
     switch (data.streamType) {
         case 'audio':
             constraints = {
-                audio: data.deviceId ? {deviceId: data.deviceId} : true,
+                audio: data.deviceId ? { deviceId: data.deviceId } : true,
                 video: false
             }
             break;
@@ -179,7 +220,7 @@ function getScreenShareConstraints(data) {
  height: 720
  streamType: "video"s
  width: 1280
- * @param reTry 需要得参数
+ * @param reTry 需要得参数 : true 首次取流， false 取流失败重新取流
  * @returns {{audio: boolean, video: {frameRate: {exact: number}, width: {exact: number}, aspectRatio: {exact: number}, height: {exact: number}}}}
  */
 function getVideoConstraints(data, reTry) {
@@ -273,10 +314,18 @@ function getVideoConstraints(data, reTry) {
 
 /***
  * 根据设备支持的能力列表获取下一个分辨率
- * @param data
+ * @param data = {
+ *      callback: ƒ (message)
+        constraints: {aspectRatio: {…}, frameRate: 30, width: 1280, height: 720, deviceId: "5e3722883e2e9337040a4f1ababf85a5bd2f6a36afc815fd391424ac05a84ab0"}
+        constraintsKeyWord: "ideal"
+        error: OverconstrainedError {name: "OverconstrainedError", message: null, constraint: "frameRate"}
+        settings: {audio: false, video: {…}}
+        streamType: "video"
+ * }
  * @returns {{frameRate: number, streamType: string, width: number, deviceId: (*|number|boolean|string|string[]|ConstrainDOMStringParameters|"user"|"environment"|"left"|"right"|VideoFacingModeEnum[]), constraintsKeyWord: (string), height: number}}
  */
 function getNextConstraints(data) {
+    console.warn(data)
     // 获取上一次取流失败的分辨率限制
     let lastSettings = data.settings
     let settings = {
