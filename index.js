@@ -247,7 +247,7 @@ setInterval(function() {
                 console.log(err);
             });
     } else {
-        console.log('Not connected yet');
+        // console.log('Not connected yet');
     }
     // Collect some stats from the video tags.
     if (localVideo.videoWidth) {
