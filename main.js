@@ -36,6 +36,7 @@ async function selectDeviceAndGum(){
     }
 
     var gumData = {
+        stream: localStream,
         callback: gumCallback,
         streamType: "video",
         constraintsKeyWord: "exact",
@@ -47,5 +48,18 @@ async function selectDeviceAndGum(){
             deviceId: deviceId,
         }
     }
-    getNewStream(gumData)
+
+
+    console.warn("getNewStream data: ", JSON.stringify(gumData, null, '  '))
+    let param = {
+        streamType: gumData.streamType,
+        constraintsKeyWord: gumData.constraintsKeyWord,
+        deviceId: deviceId,
+        frameRate: gumData.constraints.frameRate,
+        width: gumData.constraints.width,
+        height: gumData.constraints.height,
+    }
+
+    let constraints = mediaDeviceInstance.getConstraints(param)
+    mediaDeviceInstance.getMedia(gumData, constraints)
 }

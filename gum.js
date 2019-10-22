@@ -1,21 +1,3 @@
-/***
- * 取流
- * @param data
- */
-function getNewStream(data) {
-    console.warn("getNewStream data: ", JSON.stringify(data, null, '  '))
-    let param = {
-        streamType: data.streamType,
-        constraintsKeyWord: data.constraintsKeyWord,
-        deviceId: data.constraints.deviceId,
-        frameRate: data.constraints.frameRate,
-        height: data.constraints.height,
-        width: data.constraints.width
-    }
-
-    let constraints = getConstraints(param)
-    getMedia(data, constraints)
-}
 
 /***
  * 取流： audio/video/screenShare
@@ -216,9 +198,9 @@ function getScreenShareConstraints(data) {
  deviceId: "8cd24e4d2ff8de04d9170e94899fdb24a10ac7c9d09cb90bbe796e754f768d03"
  frameRate: 15
  height: 720
- streamType: "video"s
+ streamType: "video"
  width: 1280
- * @param reTry 需要得参数 : true 首次取流， false 取流失败重新取流
+ * @param reTry 需要得参数 : true 取流失败重新取流，false 首次取流
  * @returns {{audio: boolean, video: {frameRate: {exact: number}, width: {exact: number}, aspectRatio: {exact: number}, height: {exact: number}}}}
  */
 function getVideoConstraints(data, reTry) {
