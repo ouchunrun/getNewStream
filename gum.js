@@ -110,9 +110,7 @@ function getMedia(data, constraints) {
  * @param reTry
  */
 function getConstraints(data, reTry) {
-    console.warn(data)
     let constraints = {}
-    console.warn("data.streamType: ", data.streamType)
     switch (data.streamType) {
         case 'audio':
             constraints = {
@@ -325,7 +323,6 @@ function getVideoConstraints(data, reTry) {
  * @returns {{frameRate: number, streamType: string, width: number, deviceId: (*|number|boolean|string|string[]|ConstrainDOMStringParameters|"user"|"environment"|"left"|"right"|VideoFacingModeEnum[]), constraintsKeyWord: (string), height: number}}
  */
 function getNextConstraints(data) {
-    console.warn(data)
     // 获取上一次取流失败的分辨率限制
     let lastSettings = data.settings
     let settings = {
